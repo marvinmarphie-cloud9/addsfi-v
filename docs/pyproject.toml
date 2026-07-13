@@ -1,0 +1,11 @@
+[project]
+name = "addfs"
+version = "0.1.0"
+description = "Automated Deepfake Detection System"
+authors = [
+    { name = "Kitaka Mukisa Marvin" }
+]
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
