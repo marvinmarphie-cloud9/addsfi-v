@@ -4,6 +4,12 @@ from uuid import uuid4
 import cv2
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
+from addfs.detection.deepfake_detector import DeepfakeDetector
+from addfs.preprocessing.face_cropper import crop_faces
+from addfs.preprocessing.face_detector import FaceDetector
+from addfs.preprocessing.frame_extractor import extract_frames
+
+
 router = APIRouter(
     prefix="/upload",
     tags=["Video Upload"],
@@ -56,12 +62,13 @@ async def upload_video(file: UploadFile = File(...)) -> dict:
             detail="The uploaded file could not be opened as a valid video.",
         )
 
-    fps = float(video.get(cv2.CAP_PROP_FPS))
-    frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
-    width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-    video.release()
+    try:
+        fps = float(video.get(cv2.CAP_PROP_FPS))
+        frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+        width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    finally:
+        video.release()
 
     if frame_count <= 0 or width <= 0 or height <= 0:
         saved_path.unlink(missing_ok=True)
@@ -84,4 +91,111 @@ async def upload_video(file: UploadFile = File(...)) -> dict:
         "fps": round(fps, 2),
         "frame_count": frame_count,
         "duration_seconds": round(duration_seconds, 2),
+    }
+
+
+@router.post("/extract-frames/{stored_filename}")
+def extract_uploaded_video_frames(stored_filename: str) -> dict:
+    """Extract sampled frames from a previously uploaded video."""
+
+    video_path = UPLOAD_DIR / stored_filename
+
+    if not video_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Uploaded video was not found.",
+        )
+
+    try:
+        frame_paths = extract_frames(
+            video_path=video_path,
+            sample_every_n_frames=30,
+            max_frames=50,
+        )
+    except (FileNotFoundError, ValueError) as error:
+        raise HTTPException(
+            status_code=400,
+            detail=str(error),
+        ) from error
+
+    return {
+        "status": "frames_extracted",
+        "stored_filename": stored_filename,
+        "frame_count": len(frame_paths),
+        "frames": [str(path) for path in frame_paths],
+    }
+
+
+@router.post("/detect-faces/{stored_filename}")
+def detect_faces_in_uploaded_video(stored_filename: str) -> dict:
+    """
+    Extract frames, detect faces, crop them, and run temporary inference.
+    """
+
+    video_path = UPLOAD_DIR / stored_filename
+
+    if not video_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Uploaded video was not found.",
+        )
+
+    try:
+        frame_paths = extract_frames(
+            video_path=video_path,
+            sample_every_n_frames=30,
+            max_frames=50,
+        )
+
+        face_detector = FaceDetector()
+        deepfake_detector = DeepfakeDetector()
+
+        frame_results: list[dict] = []
+        all_face_paths: list[str] = []
+        total_faces = 0
+
+        for frame_path in frame_paths:
+            faces = face_detector.detect_faces(frame_path)
+            total_faces += len(faces)
+
+            cropped_paths = crop_faces(
+                image_path=frame_path,
+                faces=faces,
+            )
+
+            all_face_paths.extend(str(path) for path in cropped_paths)
+
+            frame_results.append(
+                {
+                    "frame": str(frame_path),
+                    "face_count": len(faces),
+                    "face_crops": [str(path) for path in cropped_paths],
+                    "faces": [
+                        {
+                            "x": x,
+                            "y": y,
+                            "width": width,
+                            "height": height,
+                        }
+                        for x, y, width, height in faces
+                    ],
+                }
+            )
+
+        prediction = deepfake_detector.predict(all_face_paths)
+
+    except (FileNotFoundError, ValueError, RuntimeError) as error:
+        raise HTTPException(
+            status_code=400,
+            detail=str(error),
+        ) from error
+
+    return {
+        "status": "analysis_complete",
+        "stored_filename": stored_filename,
+        "frames_analyzed": len(frame_results),
+        "total_faces": total_faces,
+        "face_crops_created": len(all_face_paths),
+        "prediction": prediction,
+        "results": frame_results,
     }
