@@ -1,0 +1,1 @@
+"""Automated Deepfake Detection System package."""

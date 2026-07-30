@@ -221,5 +221,26 @@ uploads/
 temp/
 logs/
 
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Datasets
+datasets/
+
+# Trained models
+models/
+
+# Training results
+results/
+
+# Local videos
+*.mp4
+*.avi
+*.mov
+*.mkv
+
 # Python virtual environment
 .venv/
+
