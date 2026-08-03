@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from addfs.api.prediction import router as prediction_router
 from addfs.api.upload import router as upload_router
 app = FastAPI(
     title="ADDFS",
@@ -19,3 +20,5 @@ def read_root() -> dict[str, str]:
 @app.get("/health")
 def health_check() -> dict[str, str]:
     return {"status": "healthy"}
+
+app.include_router(prediction_router)
