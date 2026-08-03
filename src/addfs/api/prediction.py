@@ -2,6 +2,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from torch import nn
 from torchvision.models import efficientnet_b0
 
@@ -14,6 +15,7 @@ router = APIRouter(
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
+FRONTEND_FILE = PROJECT_ROOT / "frontend" / "index.html"
 UPLOAD_DIR = PROJECT_ROOT / "uploads"
 
 ALLOWED_EXTENSIONS = {
@@ -91,6 +93,15 @@ def predict_uploaded_video(
             detail=str(error),
         ) from error
 
+@router.get("/ui", include_in_schema=False)
+def prediction_interface() -> FileResponse:
+    if not FRONTEND_FILE.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Frontend file was not found.",
+        )
+
+    return FileResponse(FRONTEND_FILE)
 
 @router.post("/video-upload")
 async def upload_and_predict_video(

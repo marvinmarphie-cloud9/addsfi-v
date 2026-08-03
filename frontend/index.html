@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+    <title>ADDFS Deepfake Detector</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            font-family: Arial, sans-serif;
+            color: #f5f7fb;
+            background:
+                radial-gradient(circle at top, #18243e, #070b14 60%);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 720px;
+            padding: 40px;
+            border: 1px solid #273654;
+            border-radius: 20px;
+            background: rgba(13, 20, 34, 0.95);
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            font-size: 34px;
+        }
+
+        .subtitle {
+            margin: 0 0 30px;
+            color: #a9b5ca;
+            line-height: 1.5;
+        }
+
+        .drop-zone {
+            padding: 32px;
+            text-align: center;
+            border: 2px dashed #4f6591;
+            border-radius: 14px;
+            background: #10192a;
+        }
+
+        input[type="file"] {
+            width: 100%;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 20px;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            color: white;
+            background: #356df3;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        #status {
+            margin-top: 20px;
+            color: #a9b5ca;
+        }
+
+        .result {
+            display: none;
+            margin-top: 28px;
+            padding: 24px;
+            border-radius: 14px;
+            background: #10192a;
+        }
+
+        .prediction {
+            margin-bottom: 18px;
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .real {
+            color: #55d68b;
+        }
+
+        .fake {
+            color: #ff6377;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 10px 0;
+            border-bottom: 1px solid #26334c;
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        .error {
+            color: #ff6377;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container">
+        <h1>ADDFS</h1>
+
+        <p class="subtitle">
+            Automated Deepfake Detection System.
+            Upload a video to analyze its facial frames.
+        </p>
+
+        <form id="prediction-form">
+            <div class="drop-zone">
+                <input
+                    id="video-file"
+                    name="file"
+                    type="file"
+                    accept=".mp4,.mov,.avi,.mkv"
+                    required
+                >
+            </div>
+
+            <button id="submit-button" type="submit">
+                Analyze Video
+            </button>
+        </form>
+
+        <div id="status"></div>
+
+        <section id="result" class="result">
+            <div id="prediction" class="prediction"></div>
+
+            <div class="metric">
+                <span>Confidence</span>
+                <strong id="confidence"></strong>
+            </div>
+
+            <div class="metric">
+                <span>Real probability</span>
+                <strong id="real-probability"></strong>
+            </div>
+
+            <div class="metric">
+                <span>Fake probability</span>
+                <strong id="fake-probability"></strong>
+            </div>
+
+            <div class="metric">
+                <span>Frames analyzed</span>
+                <strong id="frames-analyzed"></strong>
+            </div>
+
+            <div class="metric">
+                <span>Faces analyzed</span>
+                <strong id="faces-analyzed"></strong>
+            </div>
+
+            <div class="metric">
+                <span>Filename</span>
+                <strong id="filename"></strong>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const form = document.getElementById("prediction-form");
+        const fileInput = document.getElementById("video-file");
+        const button = document.getElementById("submit-button");
+        const status = document.getElementById("status");
+        const result = document.getElementById("result");
+        const prediction = document.getElementById("prediction");
+
+        const percent = value => `${(value * 100).toFixed(2)}%`;
+
+        form.addEventListener("submit", async event => {
+            event.preventDefault();
+
+            const file = fileInput.files[0];
+
+            if (!file) {
+                status.innerHTML =
+                    '<span class="error">Select a video first.</span>';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            button.disabled = true;
+            button.textContent = "Analyzing...";
+            status.textContent =
+                "Extracting frames, detecting faces, and running the model...";
+            result.style.display = "none";
+
+            try {
+                const response = await fetch(
+                    "/prediction/video-upload",
+                    {
+                        method: "POST",
+                        body: formData
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        data.detail || "Prediction failed."
+                    );
+                }
+
+                const isFake = data.prediction === "1_fake";
+
+                prediction.textContent = isFake
+                    ? "Likely Deepfake"
+                    : "Likely Authentic";
+
+                prediction.className = isFake
+                    ? "prediction fake"
+                    : "prediction real";
+
+                document.getElementById("confidence").textContent =
+                    percent(data.confidence);
+
+                document.getElementById(
+                    "real-probability"
+                ).textContent = percent(data.real_probability);
+
+                document.getElementById(
+                    "fake-probability"
+                ).textContent = percent(data.fake_probability);
+
+                document.getElementById(
+                    "frames-analyzed"
+                ).textContent = data.frames_analyzed;
+
+                document.getElementById(
+                    "faces-analyzed"
+                ).textContent = data.faces_analyzed;
+
+                document.getElementById("filename").textContent =
+                    data.original_filename;
+
+                status.textContent = "Analysis complete.";
+                result.style.display = "block";
+
+            } catch (error) {
+                status.innerHTML =
+                    `<span class="error">${error.message}</span>`;
+            } finally {
+                button.disabled = false;
+                button.textContent = "Analyze Video";
+            }
+        });
+    </script>
+</body>
+</html>
