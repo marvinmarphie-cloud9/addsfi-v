@@ -4,12 +4,27 @@ import sys
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
+from addfs.config import (
+    FACEFORENSICS_ROOT,
+    FRAME_INTERVAL,
+    PREPARED_DATASET,
+    WORKING_DATASET,
+    validate_configuration,
+)
 from addfs.dataset_builder import DatasetBuilder
 
 
-def get_video_paths(video_folder: Path) -> list[Path]:
-    video_extensions = {".mp4", ".avi", ".mov", ".mkv"}
+VIDEO_EXTENSIONS = {
+    ".mp4",
+    ".avi",
+    ".mov",
+    ".mkv",
+}
 
+
+def get_video_paths(
+    video_folder: Path,
+) -> list[Path]:
     if not video_folder.exists():
         raise FileNotFoundError(
             f"Video folder does not exist: {video_folder}"
@@ -19,7 +34,7 @@ def get_video_paths(video_folder: Path) -> list[Path]:
         path
         for path in video_folder.iterdir()
         if path.is_file()
-        and path.suffix.lower() in video_extensions
+        and path.suffix.lower() in VIDEO_EXTENSIONS
     )
 
 
@@ -64,25 +79,31 @@ def process_video_group(
 
     print(f"\n{split_name.upper()} videos")
 
-    for index, video_path in enumerate(video_paths, start=1):
+    for index, video_path in enumerate(
+        video_paths,
+        start=1,
+    ):
         print(
             f"[{index}/{len(video_paths)}] "
             f"{video_path.name}"
         )
 
         try:
-            train_paths, val_paths = builder.prepare(
+            train_paths, validation_paths = builder.prepare(
                 video_path=video_path,
                 class_name=class_name,
                 split_name=split_name,
             )
 
             total_training_faces += len(train_paths)
-            total_validation_faces += len(val_paths)
+            total_validation_faces += len(
+                validation_paths
+            )
 
             print(
                 f"Saved {len(train_paths)} training faces "
-                f"and {len(val_paths)} validation faces."
+                f"and {len(validation_paths)} "
+                "validation faces."
             )
 
         except Exception as error:
@@ -91,7 +112,10 @@ def process_video_group(
                 f"{video_path.name}: {error}"
             )
 
-    return total_training_faces, total_validation_faces
+    return (
+        total_training_faces,
+        total_validation_faces,
+    )
 
 
 def process_folder(
@@ -115,6 +139,7 @@ def process_folder(
         f"\nProcessing {len(video_paths)} videos "
         f"as '{class_name}'"
     )
+
     print(
         f"Video split: {len(training_videos)} train, "
         f"{len(validation_videos)} validation"
@@ -144,10 +169,13 @@ def process_folder(
 
 
 def main() -> None:
+    warnings = validate_configuration()
+
+    for warning in warnings:
+        print(f"Configuration warning: {warning}")
+
     real_folder = (
-        PROJECT_ROOT
-        / "datasets"
-        / "faceforensics"
+        FACEFORENSICS_ROOT
         / "original_sequences"
         / "youtube"
         / "c23"
@@ -155,60 +183,70 @@ def main() -> None:
     )
 
     fake_folder = (
-        PROJECT_ROOT
-        / "datasets"
-        / "faceforensics"
+        FACEFORENSICS_ROOT
         / "manipulated_sequences"
         / "Deepfakes"
         / "c23"
         / "videos"
     )
 
-    builder = DatasetBuilder(
-        frame_output_dir=(
-            PROJECT_ROOT
-            / "datasets"
-            / "working"
-            / "frames"
-        ),
-        face_output_dir=(
-            PROJECT_ROOT
-            / "datasets"
-            / "working"
-            / "faces"
-        ),
-        dataset_output_dir=(
-            PROJECT_ROOT
-            / "datasets"
-            / "prepared"
-        ),
-        frame_interval=30,
+    frame_output_directory = (
+        WORKING_DATASET / "frames"
     )
 
-    real_train, real_val = process_folder(
+    face_output_directory = (
+        WORKING_DATASET / "faces"
+    )
+
+    print("Dataset configuration")
+    print(f"FaceForensics++ root: {FACEFORENSICS_ROOT}")
+    print(f"Real videos: {real_folder}")
+    print(f"Fake videos: {fake_folder}")
+    print(f"Working directory: {WORKING_DATASET}")
+    print(f"Prepared dataset: {PREPARED_DATASET}")
+    print(f"Frame interval: {FRAME_INTERVAL}")
+
+    builder = DatasetBuilder(
+        frame_output_dir=frame_output_directory,
+        face_output_dir=face_output_directory,
+        dataset_output_dir=PREPARED_DATASET,
+        frame_interval=FRAME_INTERVAL,
+    )
+
+    real_train, real_validation = process_folder(
         builder=builder,
         video_folder=real_folder,
         class_name="0_real",
         validation_ratio=0.2,
     )
 
-    fake_train, fake_val = process_folder(
+    fake_train, fake_validation = process_folder(
         builder=builder,
         video_folder=fake_folder,
         class_name="1_fake",
         validation_ratio=0.2,
     )
 
+    total_faces = (
+        real_train
+        + real_validation
+        + fake_train
+        + fake_validation
+    )
+
     print("\nDataset preparation complete.")
     print("\nFinal summary")
     print(f"Real training faces: {real_train}")
-    print(f"Real validation faces: {real_val}")
-    print(f"Fake training faces: {fake_train}")
-    print(f"Fake validation faces: {fake_val}")
     print(
-        "Total faces: "
-        f"{real_train + real_val + fake_train + fake_val}"
+        f"Real validation faces: "
+        f"{real_validation}"
     )
+    print(f"Fake training faces: {fake_train}")
+    print(
+        f"Fake validation faces: "
+        f"{fake_validation}"
+    )
+    print(f"Total faces: {total_faces}")
 
 
 if __name__ == "__main__":
