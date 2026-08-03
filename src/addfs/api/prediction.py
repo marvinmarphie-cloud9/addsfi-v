@@ -6,6 +6,17 @@ from fastapi.responses import FileResponse
 from torch import nn
 from torchvision.models import efficientnet_b0
 
+from addfs.config import (
+    CONFIDENCE_THRESHOLD,
+    FRAME_INTERVAL,
+    MAX_UPLOAD_SIZE_BYTES,
+    MAX_UPLOAD_SIZE_MB,
+    PROJECT_ROOT,
+    RESULTS_DIR,
+    TEMP_DIR,
+    UPLOADS_DIR,
+    create_runtime_directories,
+)
 from addfs.inference.video_predictor import VideoPredictor
 
 
@@ -14,9 +25,7 @@ router = APIRouter(
     tags=["Deepfake Prediction"],
 )
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
 FRONTEND_FILE = PROJECT_ROOT / "frontend" / "index.html"
-UPLOAD_DIR = PROJECT_ROOT / "uploads"
 
 ALLOWED_EXTENSIONS = {
     ".mp4",
@@ -25,13 +34,11 @@ ALLOWED_EXTENSIONS = {
     ".mkv",
 }
 
-MAX_FILE_SIZE = 500 * 1024 * 1024
-
 
 def find_latest_checkpoint() -> Path:
     checkpoints = sorted(
-        PROJECT_ROOT.glob(
-            "results/training/run_*/best_model.pt"
+        RESULTS_DIR.glob(
+            "training/run_*/best_model.pt"
         ),
         key=lambda path: path.stat().st_mtime,
         reverse=True,
@@ -39,7 +46,8 @@ def find_latest_checkpoint() -> Path:
 
     if not checkpoints:
         raise FileNotFoundError(
-            "No trained model checkpoint was found."
+            "No trained model checkpoint was found under "
+            f"{RESULTS_DIR / 'training'}."
         )
 
     return checkpoints[0]
@@ -62,15 +70,29 @@ def create_predictor() -> VideoPredictor:
     return VideoPredictor(
         model=create_model(),
         checkpoint_path=find_latest_checkpoint(),
-        frame_interval=30,
+        frame_interval=FRAME_INTERVAL,
+        threshold=CONFIDENCE_THRESHOLD,
     )
+
+
+@router.get("/ui", include_in_schema=False)
+def prediction_interface() -> FileResponse:
+    if not FRONTEND_FILE.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Frontend file was not found.",
+        )
+
+    return FileResponse(FRONTEND_FILE)
 
 
 @router.post("/video/{stored_filename}")
 def predict_uploaded_video(
     stored_filename: str,
 ) -> dict:
-    video_path = UPLOAD_DIR / stored_filename
+    create_runtime_directories()
+
+    video_path = UPLOADS_DIR / stored_filename
 
     if not video_path.exists():
         raise HTTPException(
@@ -93,21 +115,16 @@ def predict_uploaded_video(
             detail=str(error),
         ) from error
 
-@router.get("/ui", include_in_schema=False)
-def prediction_interface() -> FileResponse:
-    if not FRONTEND_FILE.exists():
-        raise HTTPException(
-            status_code=404,
-            detail="Frontend file was not found.",
-        )
-
-    return FileResponse(FRONTEND_FILE)
 
 @router.post("/video-upload")
 async def upload_and_predict_video(
     file: UploadFile = File(...),
 ) -> dict:
-    original_filename = file.filename or "uploaded-video"
+    create_runtime_directories()
+
+    original_filename = (
+        file.filename or "uploaded-video"
+    )
 
     extension = Path(
         original_filename
@@ -130,10 +147,13 @@ async def upload_and_predict_video(
             detail="The uploaded file is empty.",
         )
 
-    if len(file_bytes) > MAX_FILE_SIZE:
+    if len(file_bytes) > MAX_UPLOAD_SIZE_BYTES:
         raise HTTPException(
             status_code=413,
-            detail="The video exceeds the 500 MB limit.",
+            detail=(
+                "The video exceeds the configured "
+                f"{MAX_UPLOAD_SIZE_MB} MB limit."
+            ),
         )
 
     temporary_path: Path | None = None
@@ -142,6 +162,7 @@ async def upload_and_predict_video(
         with NamedTemporaryFile(
             delete=False,
             suffix=extension,
+            dir=TEMP_DIR,
         ) as temporary_file:
             temporary_file.write(file_bytes)
 
@@ -158,6 +179,10 @@ async def upload_and_predict_video(
         )
 
         result["size_bytes"] = len(file_bytes)
+
+        result["model_checkpoint"] = str(
+            find_latest_checkpoint()
+        )
 
         return result
 
