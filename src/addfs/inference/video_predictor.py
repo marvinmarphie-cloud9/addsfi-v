@@ -1,5 +1,6 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from time import perf_counter
 from typing import Any
 
 from torch import nn
@@ -30,6 +31,8 @@ class VideoPredictor:
                 f"Video not found: {video_path}"
             )
 
+        start_time = perf_counter()
+
         with TemporaryDirectory() as temporary_directory:
             temporary_root = Path(temporary_directory)
 
@@ -46,7 +49,10 @@ class VideoPredictor:
             )
 
             frame_paths = frame_extractor.extract(video_path)
-            face_paths = face_processor.process(frame_paths)
+
+            face_paths = face_processor.process(
+                frame_paths
+            )
 
             if not face_paths:
                 raise ValueError(
@@ -74,7 +80,8 @@ class VideoPredictor:
 
             prediction = (
                 "1_fake"
-                if average_fake_probability >= self.threshold
+                if average_fake_probability
+                >= self.threshold
                 else "0_real"
             )
 
@@ -83,13 +90,32 @@ class VideoPredictor:
                 average_fake_probability,
             )
 
+            processing_seconds = (
+                perf_counter() - start_time
+            )
+
             return {
                 "video": str(video_path),
                 "prediction": prediction,
                 "confidence": confidence,
-                "real_probability": average_real_probability,
-                "fake_probability": average_fake_probability,
+                "real_probability": (
+                    average_real_probability
+                ),
+                "fake_probability": (
+                    average_fake_probability
+                ),
                 "frames_analyzed": len(frame_paths),
                 "faces_analyzed": len(face_paths),
                 "threshold": self.threshold,
+                "processing_seconds": round(
+                    processing_seconds,
+                    3,
+                ),
+                "model_name": "EfficientNet-B0",
+                "checkpoint": (
+                    self.checkpoint_path.name
+                ),
+                "frame_interval": (
+                    self.frame_interval
+                ),
             }
