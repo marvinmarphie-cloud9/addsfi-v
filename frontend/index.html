@@ -19,10 +19,7 @@
             margin: 0;
             min-height: 100vh;
             padding: 32px 20px;
-            font-family:
-                Inter,
-                Arial,
-                sans-serif;
+            font-family: Arial, sans-serif;
             color: #f5f7fb;
             background:
                 radial-gradient(
@@ -85,7 +82,6 @@
             border: 2px dashed #4f6591;
             border-radius: 14px;
             background: #10192a;
-            transition: 0.2s;
         }
 
         .drop-zone.dragging {
@@ -137,20 +133,23 @@
         .progress-bar {
             width: 45%;
             height: 100%;
-            border-radius: inherit;
             background: #4f7fff;
             animation:
-                progressMove 1.3s
-                infinite alternate ease-in-out;
+                progressMove
+                1.3s
+                infinite alternate
+                ease-in-out;
         }
 
         @keyframes progressMove {
             from {
-                transform: translateX(-80%);
+                transform:
+                    translateX(-80%);
             }
 
             to {
-                transform: translateX(210%);
+                transform:
+                    translateX(210%);
             }
         }
 
@@ -176,7 +175,10 @@
         .metrics {
             display: grid;
             grid-template-columns:
-                repeat(2, minmax(0, 1fr));
+                repeat(
+                    2,
+                    minmax(0, 1fr)
+                );
             gap: 12px;
         }
 
@@ -192,7 +194,6 @@
             color: #8896ad;
             font-size: 12px;
             text-transform: uppercase;
-            letter-spacing: 0.8px;
         }
 
         .metric-value {
@@ -251,557 +252,601 @@
 </head>
 
 <body>
-    <main class="page">
 
-        <header class="header">
-            <div class="brand">
-                ADDFS
-            </div>
+<main class="page">
 
-            <h1>
-                Automated Deepfake Detection
-            </h1>
+    <header class="header">
+        <div class="brand">
+            ADDFS
+        </div>
 
-            <p class="subtitle">
-                Upload a video for facial analysis using
-                the ADDFS EfficientNet deepfake detection
-                pipeline.
-            </p>
-        </header>
+        <h1>
+            Automated Deepfake Detection
+        </h1>
 
-        <div class="grid">
+        <p class="subtitle">
+            Upload a video for facial analysis
+            using the ADDFS EfficientNet deepfake
+            detection pipeline.
+        </p>
+    </header>
 
-            <section class="card">
+    <div class="grid">
 
-                <form id="prediction-form">
+        <section class="card">
 
-                    <div
-                        id="drop-zone"
-                        class="drop-zone"
-                    >
-                        <p>
-                            Select or drag a video here
-                        </p>
-
-                        <input
-                            id="video-file"
-                            name="file"
-                            type="file"
-                            accept=".mp4,.mov,.avi,.mkv"
-                            required
-                        >
-
-                        <p class="small">
-                            MP4, MOV, AVI or MKV
-                        </p>
-                    </div>
-
-                    <button
-                        id="submit-button"
-                        type="submit"
-                    >
-                        Analyze Video
-                    </button>
-
-                </form>
+            <form id="prediction-form">
 
                 <div
-                    id="progress"
-                    class="progress"
+                    id="drop-zone"
+                    class="drop-zone"
                 >
-                    <div
-                        class="progress-bar"
-                    ></div>
+
+                    <p>
+                        Select or drag a video here
+                    </p>
+
+                    <input
+                        id="video-file"
+                        name="file"
+                        type="file"
+                        accept=".mp4,.mov,.avi,.mkv"
+                        required
+                    >
+
+                    <p class="small">
+                        MP4, MOV, AVI or MKV
+                    </p>
+
                 </div>
 
-                <div id="status"></div>
-
-                <section
-                    id="result"
-                    class="result"
+                <button
+                    id="submit-button"
+                    type="submit"
                 >
+                    Analyze Video
+                </button>
 
-                    <div
-                        id="prediction"
-                        class="prediction"
-                    ></div>
+            </form>
 
-                    <div class="metrics">
+            <div
+                id="progress"
+                class="progress"
+            >
+                <div
+                    class="progress-bar"
+                ></div>
+            </div>
 
-                        <div class="metric-box">
-                            <span class="metric-label">
-                                Confidence
-                            </span>
-                            <span
-                                id="confidence"
-                                class="metric-value"
-                            ></span>
-                        </div>
+            <div id="status"></div>
 
-                        <div class="metric-box">
-                            <span class="metric-label">
-                                Processing Time
-                            </span>
-                            <span
-                                id="processing-time"
-                                class="metric-value"
-                            ></span>
-                        </div>
+            <section
+                id="result"
+                class="result"
+            >
 
-                        <div class="metric-box">
-                            <span class="metric-label">
-                                Real Probability
-                            </span>
-                            <span
-                                id="real-probability"
-                                class="metric-value"
-                            ></span>
-                        </div>
+                <div
+                    id="prediction"
+                    class="prediction"
+                ></div>
 
-                        <div class="metric-box">
-                            <span class="metric-label">
-                                Fake Probability
-                            </span>
-                            <span
-                                id="fake-probability"
-                                class="metric-value"
-                            ></span>
-                        </div>
+                <div class="metrics">
 
-                        <div class="metric-box">
-                            <span class="metric-label">
-                                Frames Analyzed
-                            </span>
-                            <span
-                                id="frames-analyzed"
-                                class="metric-value"
-                            ></span>
-                        </div>
+                    <div class="metric-box">
+                        <span class="metric-label">
+                            Confidence
+                        </span>
 
-                        <div class="metric-box">
-                            <span class="metric-label">
-                                Faces Analyzed
-                            </span>
-                            <span
-                                id="faces-analyzed"
-                                class="metric-value"
-                            ></span>
-                        </div>
-
-                        <div class="metric-box">
-                            <span class="metric-label">
-                                Model
-                            </span>
-                            <span
-                                id="model-name"
-                                class="metric-value"
-                            ></span>
-                        </div>
-
-                        <div class="metric-box">
-                            <span class="metric-label">
-                                Filename
-                            </span>
-                            <span
-                                id="filename"
-                                class="metric-value"
-                            ></span>
-                        </div>
-
+                        <span
+                            id="confidence"
+                            class="metric-value"
+                        ></span>
                     </div>
 
-                    <button
-                        id="download-report"
-                        class="secondary"
-                        type="button"
-                    >
-                        Download Analysis Report
-                    </button>
+                    <div class="metric-box">
+                        <span class="metric-label">
+                            Processing Time
+                        </span>
 
-                </section>
+                        <span
+                            id="processing-time"
+                            class="metric-value"
+                        ></span>
+                    </div>
 
-            </section>
+                    <div class="metric-box">
+                        <span class="metric-label">
+                            Real Probability
+                        </span>
 
-            <aside class="card">
+                        <span
+                            id="real-probability"
+                            class="metric-value"
+                        ></span>
+                    </div>
 
-                <h2 class="history-title">
-                    Recent Analyses
-                </h2>
+                    <div class="metric-box">
+                        <span class="metric-label">
+                            Fake Probability
+                        </span>
 
-                <div id="history"></div>
+                        <span
+                            id="fake-probability"
+                            class="metric-value"
+                        ></span>
+                    </div>
+
+                    <div class="metric-box">
+                        <span class="metric-label">
+                            Frames Analyzed
+                        </span>
+
+                        <span
+                            id="frames-analyzed"
+                            class="metric-value"
+                        ></span>
+                    </div>
+
+                    <div class="metric-box">
+                        <span class="metric-label">
+                            Faces Analyzed
+                        </span>
+
+                        <span
+                            id="faces-analyzed"
+                            class="metric-value"
+                        ></span>
+                    </div>
+
+                    <div class="metric-box">
+                        <span class="metric-label">
+                            Model
+                        </span>
+
+                        <span
+                            id="model-name"
+                            class="metric-value"
+                        ></span>
+                    </div>
+
+                    <div class="metric-box">
+                        <span class="metric-label">
+                            Filename
+                        </span>
+
+                        <span
+                            id="filename"
+                            class="metric-value"
+                        ></span>
+                    </div>
+
+                </div>
 
                 <button
-                    id="clear-history"
+                    id="download-report"
                     class="secondary"
                     type="button"
                 >
-                    Clear History
+                    Download PDF Report
                 </button>
 
-            </aside>
+            </section>
 
-        </div>
+        </section>
 
-    </main>
+        <aside class="card">
 
-    <script>
-        const form =
-            document.getElementById(
-                "prediction-form"
-            );
+            <h2 class="history-title">
+                Recent Analyses
+            </h2>
 
-        const fileInput =
-            document.getElementById(
-                "video-file"
-            );
+            <div id="history"></div>
 
-        const dropZone =
-            document.getElementById(
-                "drop-zone"
-            );
+            <button
+                id="clear-history"
+                class="secondary"
+                type="button"
+            >
+                Clear History
+            </button>
 
-        const button =
-            document.getElementById(
-                "submit-button"
-            );
+        </aside>
 
-        const status =
-            document.getElementById(
-                "status"
-            );
+    </div>
 
-        const progress =
-            document.getElementById(
-                "progress"
-            );
+</main>
 
-        const result =
-            document.getElementById(
-                "result"
-            );
+<script>
+    const form =
+        document.getElementById(
+            "prediction-form"
+        );
 
-        const prediction =
-            document.getElementById(
-                "prediction"
-            );
+    const fileInput =
+        document.getElementById(
+            "video-file"
+        );
 
-        const downloadButton =
-            document.getElementById(
-                "download-report"
-            );
+    const dropZone =
+        document.getElementById(
+            "drop-zone"
+        );
 
-        const historyElement =
-            document.getElementById(
-                "history"
-            );
+    const button =
+        document.getElementById(
+            "submit-button"
+        );
 
-        const clearHistoryButton =
-            document.getElementById(
-                "clear-history"
-            );
+    const status =
+        document.getElementById(
+            "status"
+        );
 
-        let latestResult = null;
+    const progress =
+        document.getElementById(
+            "progress"
+        );
 
-        const percent = value =>
-            `${(value * 100).toFixed(2)}%`;
+    const result =
+        document.getElementById(
+            "result"
+        );
 
-        function getHistory() {
-            return JSON.parse(
-                localStorage.getItem(
-                    "addfsHistory"
-                ) || "[]"
-            );
+    const prediction =
+        document.getElementById(
+            "prediction"
+        );
+
+    const downloadButton =
+        document.getElementById(
+            "download-report"
+        );
+
+    const historyElement =
+        document.getElementById(
+            "history"
+        );
+
+    const clearHistoryButton =
+        document.getElementById(
+            "clear-history"
+        );
+
+    let latestResult = null;
+
+    const percent = value =>
+        `${(value * 100).toFixed(2)}%`;
+
+    function getHistory() {
+        return JSON.parse(
+            localStorage.getItem(
+                "addfsHistory"
+            ) || "[]"
+        );
+    }
+
+    function saveHistoryEntry(data) {
+        const history = getHistory();
+
+        history.unshift({
+            filename:
+                data.original_filename,
+            prediction:
+                data.prediction,
+            confidence:
+                data.confidence,
+            processing_seconds:
+                data.processing_seconds,
+            timestamp:
+                new Date().toISOString()
+        });
+
+        localStorage.setItem(
+            "addfsHistory",
+            JSON.stringify(
+                history.slice(0, 10)
+            )
+        );
+
+        renderHistory();
+    }
+
+    function renderHistory() {
+        const history = getHistory();
+
+        if (!history.length) {
+            historyElement.innerHTML =
+                '<p class="small">' +
+                'No analyses yet.' +
+                '</p>';
+
+            return;
         }
 
-        function saveHistoryEntry(data) {
-            const history = getHistory();
+        historyElement.innerHTML =
+            history.map(item => {
 
-            history.unshift({
-                filename:
-                    data.original_filename,
-                prediction:
-                    data.prediction,
-                confidence:
-                    data.confidence,
-                processing_seconds:
-                    data.processing_seconds,
-                timestamp:
-                    new Date().toISOString()
-            });
+                const label =
+                    item.prediction ===
+                    "1_fake"
+                        ? "Deepfake"
+                        : "Authentic";
 
-            localStorage.setItem(
-                "addfsHistory",
-                JSON.stringify(
-                    history.slice(0, 10)
-                )
+                const time =
+                    item.processing_seconds
+                    ?? "N/A";
+
+                return `
+                    <div class="history-item">
+
+                        <div
+                            class="history-file"
+                        >
+                            ${item.filename}
+                        </div>
+
+                        <div
+                            class="history-meta"
+                        >
+                            ${label}
+                            -
+                            ${
+                                percent(
+                                    item.confidence
+                                )
+                            }
+
+                            <br>
+
+                            ${time} sec
+                        </div>
+
+                    </div>
+                `;
+
+            }).join("");
+    }
+
+    dropZone.addEventListener(
+        "dragover",
+        event => {
+            event.preventDefault();
+
+            dropZone.classList.add(
+                "dragging"
+            );
+        }
+    );
+
+    dropZone.addEventListener(
+        "dragleave",
+        () => {
+            dropZone.classList.remove(
+                "dragging"
+            );
+        }
+    );
+
+    dropZone.addEventListener(
+        "drop",
+        event => {
+            event.preventDefault();
+
+            dropZone.classList.remove(
+                "dragging"
             );
 
-            renderHistory();
+            const files =
+                event.dataTransfer.files;
+
+            if (files.length) {
+                fileInput.files = files;
+            }
         }
+    );
 
-        function renderHistory() {
-            const history = getHistory();
+    form.addEventListener(
+        "submit",
+        async event => {
 
-            if (!history.length) {
-                historyElement.innerHTML =
-                    '<p class="small">' +
-                    'No analyses yet.' +
-                    '</p>';
+            event.preventDefault();
+
+            const file =
+                fileInput.files[0];
+
+            if (!file) {
+                status.innerHTML =
+                    '<span class="error">' +
+                    'Select a video first.' +
+                    '</span>';
 
                 return;
             }
 
-            historyElement.innerHTML =
-                history.map(item => {
-                    const label =
-                        item.prediction ===
-                        "1_fake"
-                            ? "Deepfake"
-                            : "Authentic";
+            const formData =
+                new FormData();
 
-                    return `
-                        <div class="history-item">
-                            <div class="history-file">
-                                ${item.filename}
-                            </div>
+            formData.append(
+                "file",
+                file
+            );
 
-                            <div class="history-meta">
-                                ${label}
-                                ·
-                                ${percent(
-                                    item.confidence
-                                )}
-                                <br>
-                                ${
-                                    item.processing_seconds
-                                    ?? "—"
-                                } sec
-                            </div>
-                        </div>
-                    `;
-                }).join("");
-        }
+            button.disabled = true;
 
-        dropZone.addEventListener(
-            "dragover",
-            event => {
-                event.preventDefault();
+            button.textContent =
+                "Analyzing...";
 
-                dropZone.classList.add(
-                    "dragging"
-                );
-            }
-        );
+            progress.style.display =
+                "block";
 
-        dropZone.addEventListener(
-            "dragleave",
-            () => {
-                dropZone.classList.remove(
-                    "dragging"
-                );
-            }
-        );
+            result.style.display =
+                "none";
 
-        dropZone.addEventListener(
-            "drop",
-            event => {
-                event.preventDefault();
+            status.textContent =
+                "Extracting frames, " +
+                "detecting faces, and " +
+                "running the AI model...";
 
-                dropZone.classList.remove(
-                    "dragging"
-                );
+            try {
 
-                const files =
-                    event.dataTransfer.files;
+                const response =
+                    await fetch(
+                        "/prediction/video-upload",
+                        {
+                            method: "POST",
+                            body: formData
+                        }
+                    );
 
-                if (files.length) {
-                    fileInput.files = files;
-                }
-            }
-        );
+                const data =
+                    await response.json();
 
-        form.addEventListener(
-            "submit",
-            async event => {
-
-                event.preventDefault();
-
-                const file =
-                    fileInput.files[0];
-
-                if (!file) {
-                    status.innerHTML =
-                        '<span class="error">' +
-                        'Select a video first.' +
-                        '</span>';
-
-                    return;
+                if (!response.ok) {
+                    throw new Error(
+                        data.detail ||
+                        "Prediction failed."
+                    );
                 }
 
-                const formData =
-                    new FormData();
+                latestResult = data;
 
-                formData.append(
-                    "file",
-                    file
-                );
+                const isFake =
+                    data.prediction ===
+                    "1_fake";
 
-                button.disabled = true;
+                prediction.textContent =
+                    isFake
+                        ? "Likely Deepfake"
+                        : "Likely Authentic";
 
-                button.textContent =
-                    "Analyzing...";
+                prediction.className =
+                    isFake
+                        ? "prediction fake"
+                        : "prediction real";
 
-                progress.style.display =
-                    "block";
+                document.getElementById(
+                    "confidence"
+                ).textContent =
+                    percent(
+                        data.confidence
+                    );
 
-                result.style.display =
-                    "none";
+                document.getElementById(
+                    "real-probability"
+                ).textContent =
+                    percent(
+                        data.real_probability
+                    );
+
+                document.getElementById(
+                    "fake-probability"
+                ).textContent =
+                    percent(
+                        data.fake_probability
+                    );
+
+                document.getElementById(
+                    "frames-analyzed"
+                ).textContent =
+                    data.frames_analyzed;
+
+                document.getElementById(
+                    "faces-analyzed"
+                ).textContent =
+                    data.faces_analyzed;
+
+                document.getElementById(
+                    "processing-time"
+                ).textContent =
+                    `${
+                        data.processing_seconds
+                    } sec`;
+
+                document.getElementById(
+                    "model-name"
+                ).textContent =
+                    data.model_name ||
+                    "EfficientNet-B0";
+
+                document.getElementById(
+                    "filename"
+                ).textContent =
+                    data.original_filename;
 
                 status.textContent =
-                    "Extracting frames, detecting faces, " +
-                    "and running the AI model...";
+                    "Analysis complete.";
 
-                try {
-                    const response =
-                        await fetch(
-                            "/prediction/video-upload",
-                            {
-                                method: "POST",
-                                body: formData
-                            }
-                        );
+                result.style.display =
+                    "block";
 
+                saveHistoryEntry(
+                    data
+                );
+
+            } catch (error) {
+
+                status.innerHTML =
+                    '<span class="error">' +
+                    error.message +
+                    '</span>';
+
+            } finally {
+
+                button.disabled = false;
+
+                button.textContent =
+                    "Analyze Video";
+
+                progress.style.display =
+                    "none";
+            }
+        }
+    );
+
+    downloadButton.addEventListener(
+        "click",
+        async () => {
+
+            if (!latestResult) {
+                return;
+            }
+
+            downloadButton.disabled =
+                true;
+
+            downloadButton.textContent =
+                "Generating PDF...";
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/prediction/report",
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+                            body:
+                                JSON.stringify(
+                                    latestResult
+                                )
+                        }
+                    );
+
+                if (!response.ok) {
                     const data =
                         await response.json();
 
-                    if (!response.ok) {
-                        throw new Error(
-                            data.detail ||
-                            "Prediction failed."
-                        );
-                    }
-
-                    latestResult = data;
-
-                    const isFake =
-                        data.prediction ===
-                        "1_fake";
-
-                    prediction.textContent =
-                        isFake
-                            ? "Likely Deepfake"
-                            : "Likely Authentic";
-
-                    prediction.className =
-                        isFake
-                            ? "prediction fake"
-                            : "prediction real";
-
-                    document.getElementById(
-                        "confidence"
-                    ).textContent =
-                        percent(
-                            data.confidence
-                        );
-
-                    document.getElementById(
-                        "real-probability"
-                    ).textContent =
-                        percent(
-                            data.real_probability
-                        );
-
-                    document.getElementById(
-                        "fake-probability"
-                    ).textContent =
-                        percent(
-                            data.fake_probability
-                        );
-
-                    document.getElementById(
-                        "frames-analyzed"
-                    ).textContent =
-                        data.frames_analyzed;
-
-                    document.getElementById(
-                        "faces-analyzed"
-                    ).textContent =
-                        data.faces_analyzed;
-
-                    document.getElementById(
-                        "processing-time"
-                    ).textContent =
-                        `${data.processing_seconds} sec`;
-
-                    document.getElementById(
-                        "model-name"
-                    ).textContent =
-                        data.model_name ||
-                        "EfficientNet-B0";
-
-                    document.getElementById(
-                        "filename"
-                    ).textContent =
-                        data.original_filename;
-
-                    status.textContent =
-                        "Analysis complete.";
-
-                    result.style.display =
-                        "block";
-
-                    saveHistoryEntry(data);
-
-                } catch (error) {
-
-                    status.innerHTML =
-                        `<span class="error">` +
-                        `${error.message}` +
-                        `</span>`;
-
-                } finally {
-
-                    button.disabled = false;
-
-                    button.textContent =
-                        "Analyze Video";
-
-                    progress.style.display =
-                        "none";
+                    throw new Error(
+                        data.detail ||
+                        "Report generation failed."
+                    );
                 }
-            }
-        );
-
-        downloadButton.addEventListener(
-            "click",
-            () => {
-
-                if (!latestResult) {
-                    return;
-                }
-
-                const report = {
-                    system:
-                        "ADDFS",
-                    generated_at:
-                        new Date().toISOString(),
-                    ...latestResult
-                };
 
                 const blob =
-                    new Blob(
-                        [
-                            JSON.stringify(
-                                report,
-                                null,
-                                2
-                            )
-                        ],
-                        {
-                            type:
-                                "application/json"
-                        }
-                    );
+                    await response.blob();
 
                 const url =
                     URL.createObjectURL(
@@ -816,28 +861,51 @@
                 link.href = url;
 
                 link.download =
-                    "ADDFS_Analysis_Report.json";
+                    "ADDFS_Analysis_Report.pdf";
+
+                document.body.appendChild(
+                    link
+                );
 
                 link.click();
+
+                link.remove();
 
                 URL.revokeObjectURL(
                     url
                 );
+
+            } catch (error) {
+
+                status.innerHTML =
+                    '<span class="error">' +
+                    error.message +
+                    '</span>';
+
+            } finally {
+
+                downloadButton.disabled =
+                    false;
+
+                downloadButton.textContent =
+                    "Download PDF Report";
             }
-        );
+        }
+    );
 
-        clearHistoryButton.addEventListener(
-            "click",
-            () => {
-                localStorage.removeItem(
-                    "addfsHistory"
-                );
+    clearHistoryButton.addEventListener(
+        "click",
+        () => {
+            localStorage.removeItem(
+                "addfsHistory"
+            );
 
-                renderHistory();
-            }
-        );
+            renderHistory();
+        }
+    );
 
-        renderHistory();
-    </script>
+    renderHistory();
+</script>
+
 </body>
 </html>
